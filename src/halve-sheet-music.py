@@ -48,18 +48,26 @@ def hsplit_pages(tmpd, src_fname, dst_fname):
     src_f.close()
     dst_f.close()
 
-def wrap(src_fname, dst_fname):
+def wrap(src_fname, dst_fname, debug):
     tmpd = tempfile.mkdtemp()
     proc = spc.Popen(["mudraw", "-o", os.path.join(tmpd, "%d.png"), src_fname])
     proc.wait()
     hsplit_pages(tmpd, src_fname, dst_fname)
-    shutil.rmtree(tmpd)
+    if debug:
+        print(tmpd)
+    else:
+        shutil.rmtree(tmpd)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "usage: halve-sheet-music.py bach.pdf output.pdf"
+    debug = False
+    args = sys.argv[1:]
+    if args[0] == '--debug':
+        debug = True
+        args = args[1:]
+    if len(args) != 2:
+        print "usage: halve-sheet-music.py [--debug] bach.pdf output.pdf"
         exit(-1)
-    (_, src_fname, dst_fname) = sys.argv
+    (src_fname, dst_fname) = args
     if os.path.isdir(dst_fname):
         dst_fname = os.path.join(dst_fname, os.path.basename(src_fname))
-    wrap(src_fname, dst_fname)
+    wrap(src_fname, dst_fname, debug)
