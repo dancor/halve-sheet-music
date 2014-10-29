@@ -4,12 +4,10 @@ import copy
 import math
 import os
 import pyPdf
-import shutil
 import subprocess as spc
 import sys
-import tempfile
 
-def hsplit_pages(tmpd, src_fname, dst_fname):
+def hsplit_pages(path, src_fname, dst_fname):
     src_f = file(src_fname, "r+b")
     dst_f = file(dst_fname, "w+b")
 
@@ -29,7 +27,7 @@ def hsplit_pages(tmpd, src_fname, dst_fname):
         #print(x2, y2)
 
         proc = spc.Popen(["png-halve-sheet-music",
-            os.path.join(tmpd, str(i + 1) + ".png")],
+            os.path.join(path, str(i + 1) + ".png")],
             stdout=spc.PIPE)
         (y_new1, y_new2, _) = proc.stdout.read().split("\n")
         proc.wait()
@@ -48,15 +46,20 @@ def hsplit_pages(tmpd, src_fname, dst_fname):
     src_f.close()
     dst_f.close()
 
+def checksum(path):
+    p = spc.Popen(["md5sum", path], stdout=spc.PIPE)
+    r = p.stdout.read().split()[0]
+    p.wait()
+    return r
+
 def wrap(src_fname, dst_fname, debug):
-    tmpd = tempfile.mkdtemp()
-    proc = spc.Popen(["mudraw", "-o", os.path.join(tmpd, "%d.png"), src_fname])
-    proc.wait()
-    hsplit_pages(tmpd, src_fname, dst_fname)
-    if debug:
-        print(tmpd)
-    else:
-        shutil.rmtree(tmpd)
+    path = os.path.join(os.environ["HOME"], ".config", "halve-sheet-music",
+        checksum(src_fname))
+    if not os.path.isdir(path):
+        os.makedirs(path)
+        spc.Popen(["mudraw", "-o", os.path.join(path, "%d.png"),
+            src_fname]).wait()
+    hsplit_pages(path, src_fname, dst_fname)
 
 if __name__ == "__main__":
     debug = False
