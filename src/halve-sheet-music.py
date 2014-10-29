@@ -60,4 +60,6 @@ if __name__ == "__main__":
         print "usage: halve-sheet-music.py bach.pdf output.pdf"
         exit(-1)
     (_, src_fname, dst_fname) = sys.argv
+    if os.path.isdir(dst_fname):
+        dst_fname = os.path.join(dst_fname, os.path.basename(src_fname))
     wrap(src_fname, dst_fname)
