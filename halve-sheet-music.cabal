@@ -8,6 +8,7 @@ build-type:      Simple
 build-depends:
     base
   , bytestring
+  , containers
   , JuicyPixels
 
 executable:      png-halve-sheet-music

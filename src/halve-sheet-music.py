@@ -8,11 +8,15 @@ import subprocess as spc
 import sys
 
 def hsplit_pages(path, src_fname, dst_fname):
-    src_f = file(src_fname, "r+b")
-    dst_f = file(dst_fname, "w+b")
+    src_f = open(src_fname, "rb")
+    dst_f = open(dst_fname, "wb")
 
     input = pyPdf.PdfFileReader(src_f)
     output = pyPdf.PdfFileWriter()
+
+    # pyPdf errors on some of the files being blank encrypted. This is common?
+    if input.isEncrypted:
+        input.decrypt("")
 
     for i in range(input.getNumPages()):
     #for i in range(26, 28):
@@ -23,21 +27,20 @@ def hsplit_pages(path, src_fname, dst_fname):
         x1, y1 = p.mediaBox.lowerLeft
         x2, y2 = p.mediaBox.upperRight
 
-        #print(x1, y1)
-        #print(x2, y2)
-
+        pNumStr = str(i + 1)
         proc = spc.Popen(["png-halve-sheet-music",
-            os.path.join(path, str(i + 1) + ".png")],
+            os.path.join(path, pNumStr + ".png"),
+            src_fname + " page " + pNumStr + " (" + str(2 * i + 1) + "): "],
             stdout=spc.PIPE)
-        (y_new1, y_new2, _) = proc.stdout.read().split("\n")
+        (half1_new_btm_s, half2_new_top_s, _) = proc.stdout.read().split("\n")
         proc.wait()
-        #print y_new1
-        #print y_new2
-        y_new1 = int(y_new1)
-        y_new2 = int(y_new2)
+        half1_new_btm = int(half1_new_btm_s)
+        half2_new_top = int(half2_new_top_s)
 
-        p.mediaBox.lowerLeft = (x1, y_new1)
-        q.mediaBox.upperRight = (x2, y_new2)
+        # pdf coordinate system is low-left origin:
+        # vertically flipped from normal computer graphics
+        p.mediaBox.lowerLeft = (x1, y2 - half1_new_btm)
+        q.mediaBox.upperRight = (x2, y2 - half2_new_top)
 
         output.addPage(p)
         output.addPage(q)
